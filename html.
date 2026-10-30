@@ -1,0 +1,428 @@
+```html
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emotsiyani top va ko‘rsat!</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2, #e879f9);
+    min-height: 100vh;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+h1 {
+    font-size: clamp(27px, 5vw, 44px);
+    margin-bottom: 10px;
+    text-shadow: 2px 3px 8px #3335;
+}
+
+.subtitle {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.info {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+}
+
+.badge {
+    background: #ffffff25;
+    border: 1px solid #ffffff65;
+    border-radius: 15px;
+    padding: 12px 20px;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.game {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 150px));
+    gap: 15px;
+    justify-content: center;
+    max-width: 700px;
+    margin: 25px auto;
+}
+
+.card {
+    height: 175px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.65s;
+    transform-style: preserve-3d;
+}
+
+.card.open .card-inner {
+    transform: rotateY(180deg);
+}
+
+.front, .back {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: 0 6px 15px #2224;
+}
+
+.front {
+    background: linear-gradient(145deg, #ffffff, #dbeafe);
+    color: #5b21b6;
+    border: 3px solid #fff;
+}
+
+.front .number {
+    font-size: 55px;
+    font-weight: 900;
+}
+
+.front .hint {
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.back {
+    background: white;
+    color: #312e81;
+    transform: rotateY(180deg);
+    padding: 8px;
+    border: 3px solid #fbbf24;
+}
+
+.emoji {
+    font-size: 65px;
+    line-height: 1.2;
+}
+
+.emotion-name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.card.done .back {
+    border-color: #22c55e;
+    background: #dcfce7;
+}
+
+button {
+    border: none;
+    border-radius: 12px;
+    padding: 13px 22px;
+    margin: 7px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: scale(1.04);
+}
+
+.primary {
+    background: #facc15;
+    color: #422006;
+}
+
+.secondary {
+    background: white;
+    color: #5b21b6;
+}
+
+.task {
+    max-width: 650px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #ffffff20;
+    border: 1px solid #ffffff70;
+    border-radius: 20px;
+    font-size: 19px;
+    line-height: 1.6;
+}
+
+#result {
+    display: none;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 25px;
+    border-radius: 20px;
+    background: white;
+    color: #5b21b6;
+    font-size: 21px;
+}
+
+@media (max-width: 650px) {
+    .game {
+        grid-template-columns: repeat(3, minmax(0, 110px));
+        gap: 10px;
+    }
+
+    .card {
+        height: 145px;
+    }
+
+    .front .number {
+        font-size: 43px;
+    }
+
+    .emoji {
+        font-size: 48px;
+    }
+
+    .emotion-name {
+        font-size: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎭 EMOTSIYANI TOP VA KO‘RSAT!</h1>
+
+<div class="subtitle">
+    Raqamni tanlang va yashiringan emotsiyani yuzingizda ifodalang!
+</div>
+
+<div class="info">
+    <div class="badge">⭐ Ball: <span id="score">0</span></div>
+    <div class="badge">✅ Bajarildi: <span id="completed">0</span>/12</div>
+</div>
+
+<div class="task" id="task">
+    🎯 <b>O‘yin qoidasi:</b><br>
+    Istalgan raqamni bosing. Kartochka ortidagi emotsiyani diqqat bilan kuzating
+    va uni yuzingiz bilan ko‘rsatib bering!
+</div>
+
+<div class="game" id="game"></div>
+
+<div>
+    <button class="primary" onclick="confirmEmotion()">
+        ✅ Bajardim!
+    </button>
+
+    <button class="secondary" onclick="nextEmotion()">
+        ➡️ Keyingi emotsiya
+    </button>
+
+    <button class="secondary" onclick="restartGame()">
+        🔄 Qaytadan boshlash
+    </button>
+</div>
+
+<div id="result"></div>
+
+<script>
+const emotions = [
+    { emoji: "😄", name: "QUVONCH", instruction: "Xuddi juda xursand bo‘lgandek tabassum qiling!" },
+    { emoji: "😢", name: "XAFALIK", instruction: "Xafa bo‘lgan insonning yuz ifodasini ko‘rsating." },
+    { emoji: "😲", name: "HAYRAT", instruction: "Kutilmagan voqeani ko‘rgandek hayratlaning!" },
+    { emoji: "😨", name: "QO‘RQUV", instruction: "Qo‘rqib ketgan insonning yuz ifodasini ko‘rsating." },
+    { emoji: "😠", name: "G‘AZAB", instruction: "Jahli chiqqan insonning yuzini ifodalang." },
+    { emoji: "🤩", name: "HAYAJON", instruction: "Juda hayajonlangan insonni tasvirlang." },
+    { emoji: "😎", name: "ISHONCH", instruction: "O‘ziga ishongan insondek turing." },
+    { emoji: "🤨", name: "SHUBHA", instruction: "Biror narsaga shubha qilayotgan yuzni ko‘rsating." },
+    { emoji: "😊", name: "UYALISH", instruction: "Uyalgandek jilmayib, yuz ifodangizni o‘zgartiring." },
+    { emoji: "🧐", name: "QIZIQISH", instruction: "Biror qiziqarli narsani o‘rganayotgandek ko‘rining." },
+    { emoji: "😌", name: "XOTIRJAMLIK", instruction: "Tinch va xotirjam insonning yuzini ifodalang." },
+    { emoji: "🥹", name: "MEHR", instruction: "Mehr va samimiylikni yuzingiz bilan ifodalang." }
+];
+
+let deck = [];
+let selected = null;
+let score = 0;
+let completed = 0;
+
+const game = document.getElementById("game");
+
+function shuffle(array) {
+    return array
+        .map(item => ({ item, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(entry => entry.item);
+}
+
+function startGame() {
+    deck = shuffle(emotions.map((emotion, index) => ({
+        ...emotion,
+        id: index,
+        opened: false,
+        done: false
+    })));
+
+    selected = null;
+    score = 0;
+    completed = 0;
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("completed").textContent = completed;
+    document.getElementById("result").style.display = "none";
+    document.getElementById("task").innerHTML =
+        "🎯 <b>O‘yin qoidasi:</b><br>" +
+        "Istalgan raqamni bosing. Kartochka ortidagi emotsiyani kuzating " +
+        "va uni yuzingiz bilan ko‘rsatib bering!";
+
+    renderCards();
+}
+
+function renderCards() {
+    game.innerHTML = "";
+
+    deck.forEach((emotion, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        if (emotion.opened) card.classList.add("open");
+        if (emotion.done) card.classList.add("done");
+
+        card.innerHTML = `
+            <div class="card-inner">
+                <div class="front">
+                    <div class="number">${index + 1}</div>
+                    <div class="hint">BOSING!</div>
+                </div>
+                <div class="back">
+                    <div class="emoji">${emotion.emoji}</div>
+                    <div class="emotion-name">${emotion.name}</div>
+                    ${emotion.done ? "<div>✅ Bajarildi</div>" : ""}
+                </div>
+            </div>
+        `;
+
+        card.addEventListener("click", () => openCard(index));
+        game.appendChild(card);
+    });
+}
+
+function openCard(index) {
+    const emotion = deck[index];
+
+    if (emotion.done) {
+        document.getElementById("task").innerHTML =
+            "Bu topshiriq allaqachon bajarilgan. Boshqa raqamni tanlang!";
+        return;
+    }
+
+    selected = index;
+    emotion.opened = true;
+
+    renderCards();
+
+    document.getElementById("task").innerHTML =
+        `🎭 <b>${emotion.name}!</b><br>` +
+        `${emotion.instruction}<br>` +
+        "<b>Endi shu emotsiyani yuzingiz bilan ko‘rsating!</b>";
+}
+
+function confirmEmotion() {
+    if (selected === null) {
+        document.getElementById("task").innerHTML =
+            "⚠️ Avval raqamlardan birini tanlang!";
+        return;
+    }
+
+    const emotion = deck[selected];
+
+    if (emotion.done) return;
+
+    const accepted = confirm(
+        "O‘quvchi emotsiyani ko‘rsatdimi?\n\n" +
+        "OK — Ha, topshiriq bajarildi, 1 ball berilsin.\n" +
+        "Cancel — Hali bajarilmadi."
+    );
+
+    if (!accepted) return;
+
+    emotion.done = true;
+    score++;
+    completed++;
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("completed").textContent = completed;
+
+    selected = null;
+    renderCards();
+
+    if (completed === emotions.length) {
+        showResult();
+    } else {
+        document.getElementById("task").innerHTML =
+            "🎉 <b>Barakalla!</b> Topshiriq bajarildi. Endi boshqa raqamni tanlang!";
+    }
+}
+
+function nextEmotion() {
+    const next = deck.findIndex(emotion => !emotion.done);
+
+    if (next === -1) {
+        showResult();
+        return;
+    }
+
+    openCard(next);
+}
+
+function showResult() {
+    const result = document.getElementById("result");
+
+    let message = "";
+
+    if (score >= 10) {
+        message = "🏆 Ajoyib! Siz emotsiyalarni juda yaxshi ifodaladingiz!";
+    } else if (score >= 7) {
+        message = "👏 Barakalla! Siz emotsiyalarni yaxshi ifodaladingiz!";
+    } else if (score >= 4) {
+        message = "🌟 Yaxshi harakat! Mashq qilishda davom eting!";
+    } else {
+        message = "💪 Harakat qilishdan to‘xtamang! Siz albatta uddalaysiz!";
+    }
+
+    result.innerHTML =
+        `<h2>🎊 O‘YIN YAKUNLANDI!</h2>` +
+        `<p>${message}</p>` +
+        `<p>Natija: <b>${score}/12 ball</b></p>` +
+        `<p>Barcha emotsiyalarni ko‘rsatganingiz uchun rahmat!</p>`;
+
+    result.style.display = "block";
+    result.scrollIntoView({ behavior: "smooth" });
+
+    document.getElementById("task").innerHTML =
+        "🎉 Barcha topshiriqlar yakunlandi!";
+}
+
+function restartGame() {
+    startGame();
+}
+
+startGame();
+</script>
+
+</body>
+</html>
+```
